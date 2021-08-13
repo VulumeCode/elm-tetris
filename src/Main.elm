@@ -343,8 +343,13 @@ update msg model =
             ( spawn tetrimino model, Cmd.none )
 
         SetControl control ->
-            ( move { model | control = Just control } control, Cmd.none )
+            ( if Just control /= model.control then
+                move { model | control = Just control } control
 
+              else
+                model
+            , Cmd.none
+            )
         CancelControl control ->
             ( if Just control == model.control then
                 { model | control = Nothing }
@@ -666,19 +671,37 @@ subscriptions model =
                     (\key ->
                         case key of
                             "ArrowLeft" ->
-                                Decode.succeed (Move Left)
+                                Decode.succeed (SetControl Left)
 
                             "ArrowRight" ->
-                                Decode.succeed (Move Right)
+                                Decode.succeed (SetControl Right)
 
                             "ArrowUp" ->
                                 Decode.succeed Rotate
 
                             "ArrowDown" ->
-                                Decode.succeed (Move Down)
+                                Decode.succeed (SetControl Down)
 
                             " " ->
                                 Decode.succeed Place
+
+                            _ ->
+                                Decode.fail ""
+                    )
+            )
+        , Browser.Events.onKeyUp
+            (Decode.field "key" Decode.string
+                |> Decode.andThen
+                    (\key ->
+                        case key of
+                            "ArrowLeft" ->
+                                Decode.succeed (CancelControl Left)
+
+                            "ArrowRight" ->
+                                Decode.succeed (CancelControl Right)
+
+                            "ArrowDown" ->
+                                Decode.succeed (CancelControl Down)
 
                             _ ->
                                 Decode.fail ""
