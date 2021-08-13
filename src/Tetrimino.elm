@@ -47,52 +47,52 @@ spawn : Tetrimino -> List ( ( Int, Int ), ( Tetrimino, Bool ) )
 spawn tetrimino =
     case tetrimino of
         I ->
-            [ ( ( 3, 0 ), ( I, False ) )
-            , ( ( 4, 0 ), ( I, True ) )
-            , ( ( 5, 0 ), ( I, False ) )
-            , ( ( 6, 0 ), ( I, False ) )
+            [ ( ( 0, 0 ), ( I, False ) )
+            , ( ( 1, 0 ), ( I, True ) )
+            , ( ( 2, 0 ), ( I, False ) )
+            , ( ( 3, 0 ), ( I, False ) )
             ]
 
         O ->
-            [ ( ( 4, 0 ), ( O, False ) )
-            , ( ( 5, 0 ), ( O, False ) )
-            , ( ( 4, 1 ), ( O, False ) )
-            , ( ( 5, 1 ), ( O, False ) )
+            [ ( ( 1, 0 ), ( O, False ) )
+            , ( ( 0, 0 ), ( O, False ) )
+            , ( ( 1, 1 ), ( O, False ) )
+            , ( ( 0, 1 ), ( O, False ) )
             ]
 
         T ->
-            [ ( ( 4, 0 ), ( T, False ) )
-            , ( ( 5, 0 ), ( T, True ) )
-            , ( ( 6, 0 ), ( T, False ) )
-            , ( ( 5, 1 ), ( T, False ) )
+            [ ( ( 0, 0 ), ( T, False ) )
+            , ( ( 1, 0 ), ( T, True ) )
+            , ( ( 1, 1 ), ( T, False ) )
+            , ( ( 2, 0 ), ( T, False ) )
             ]
 
         S ->
-            [ ( ( 5, 0 ), ( S, False ) )
-            , ( ( 6, 0 ), ( S, False ) )
-            , ( ( 4, 1 ), ( S, False ) )
-            , ( ( 5, 1 ), ( S, True ) )
+            [ ( ( 1, 0 ), ( S, False ) )
+            , ( ( 2, 0 ), ( S, False ) )
+            , ( ( 0, 1 ), ( S, False ) )
+            , ( ( 1, 1 ), ( S, True ) )
             ]
 
         Z ->
-            [ ( ( 4, 0 ), ( Z, False ) )
-            , ( ( 5, 0 ), ( Z, False ) )
-            , ( ( 5, 1 ), ( Z, True ) )
-            , ( ( 6, 1 ), ( Z, False ) )
+            [ ( ( 0, 0 ), ( Z, False ) )
+            , ( ( 1, 0 ), ( Z, False ) )
+            , ( ( 1, 1 ), ( Z, True ) )
+            , ( ( 2, 1 ), ( Z, False ) )
             ]
 
         J ->
-            [ ( ( 3, 0 ), ( J, False ) )
-            , ( ( 4, 0 ), ( J, True ) )
-            , ( ( 5, 0 ), ( J, False ) )
-            , ( ( 5, 1 ), ( J, False ) )
+            [ ( ( 0, 0 ), ( J, False ) )
+            , ( ( 1, 0 ), ( J, True ) )
+            , ( ( 2, 0 ), ( J, False ) )
+            , ( ( 2, 1 ), ( J, False ) )
             ]
 
         L ->
-            [ ( ( 5, 0 ), ( L, False ) )
-            , ( ( 6, 0 ), ( L, True ) )
-            , ( ( 7, 0 ), ( L, False ) )
-            , ( ( 5, 1 ), ( L, False ) )
+            [ ( ( 0, 0 ), ( L, False ) )
+            , ( ( 1, 0 ), ( L, True ) )
+            , ( ( 2, 0 ), ( L, False ) )
+            , ( ( 0, 1 ), ( L, False ) )
             ]
 
 

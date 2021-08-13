@@ -10,6 +10,7 @@ body {
 
 body {
   overscroll-behavior-y: none;
+  background-color: rgb(31, 41, 55);
 }
 
 a,

@@ -54,7 +54,7 @@ type Control
 
 init : Value -> ( Model, Cmd Msg )
 init flags =
-    ( { gridState = Grid.empty ( 10, 20 )
+    ( { gridState = Grid.empty ( 20, 20 )
       , storage =
             Decode.decodeValue (Decode.field "storage" Decode.string) flags
                 |> Result.andThen (Decode.decodeString Storage.decoder)
@@ -74,7 +74,7 @@ init flags =
 
 view : Model -> Document Msg
 view model =
-    { title = "Elm Tetris"
+    { title = "Slantris"
     , body = [ viewRoot model ]
     }
 
@@ -100,6 +100,7 @@ viewBoard model =
                 , Svg.Attributes.width "100%"
                 , Svg.Attributes.height "100%"
                 , Svg.Attributes.preserveAspectRatio "xMidYMid meet"
+                , Svg.Attributes.transform "rotate(45)"
                 ]
                 (List.map (viewCell model.gridState) (Grid.coordinates model.gridState))
             , overlayControls
@@ -117,13 +118,13 @@ viewCell gridState ( x, y ) =
                 [ "fill-current"
                 , Grid.get ( x, y ) gridState
                     |> Maybe.map Cell.color
-                    |> Maybe.withDefault "text-gray-300"
+                    |> Maybe.withDefault "text-gray-700"
                 ]
             )
         , Svg.Attributes.width (String.fromInt Cell.size)
         , Svg.Attributes.height (String.fromInt Cell.size)
         , Svg.Attributes.strokeWidth (String.fromFloat (0.05 * toFloat Cell.size))
-        , Svg.Attributes.stroke "#edf2f7"
+        , Svg.Attributes.stroke "rgb(31, 41, 55)"
         , Svg.Attributes.x (String.fromInt (x * Cell.size))
         , Svg.Attributes.y (String.fromInt (y * Cell.size))
         ]
@@ -147,7 +148,7 @@ viewHeader model =
                 "🏆"
     in
     Html.div [ Attributes.class "flex items-center justify-between p-4" ]
-        [ Html.span []
+        [ Html.span [ Attributes.class "ml-4 text-gray-200" ]
             [ Html.text ("lines - " ++ String.fromInt model.lines)
             , case model.storage of
                 Just storage ->
@@ -202,7 +203,7 @@ viewHeader model =
 
 viewControls : Html Msg
 viewControls =
-    Html.div [ Attributes.class "flex h-24" ]
+    Html.div [ Attributes.class "flex h-24", Attributes.style "z-index" "1" ]
         [ Html.button
             [ Attributes.class "h-full w-1/4"
             , Events.on "pointerdown" (Decode.succeed <| SetControl Left)
@@ -218,7 +219,7 @@ viewControls =
             , Events.on "pointerdown" (Decode.succeed Rotate)
             ]
             [ Html.span [ Attributes.class "flex flex-col text-3xl" ]
-                [ Html.text "🔄"
+                [ Html.text "🤞"
                 ]
             ]
         , Html.button
@@ -276,6 +277,7 @@ viewOverlay model =
         GameOver ->
             Html.div
                 [ Attributes.class "absolute inset-0 flex flex-col justify-center items-center bg-black text-white"
+                , Attributes.style "z-index" "2"
                 ]
                 [ Html.button
                     [ Attributes.class "p-10"
@@ -375,7 +377,7 @@ update msg model =
 
         Restart ->
             ( { model
-                | gridState = Grid.empty ( 10, 20 )
+                | gridState = Grid.empty ( 20, 20 )
                 , state = Playing
                 , lines = 0
               }
@@ -488,8 +490,10 @@ moveHelp control grid =
 clearLines : Model -> ( Model, Cmd Msg )
 clearLines model =
     let
-        ( gridX, _ ) =
+        (gridX, gridY) =
             Grid.dimensions model.gridState
+        
+
 
         linesToClear =
             List.foldl
@@ -497,7 +501,7 @@ clearLines model =
                 Dict.empty
                 (Grid.positions model.gridState)
                 |> Dict.toList
-                |> List.filter (\( _, count ) -> count == gridX)
+                |> List.filter (\( row, count ) -> count >= (gridX // 2) + (19 - row))
                 |> List.map Tuple.first
                 |> List.sort
 
@@ -617,20 +621,20 @@ groupUpdate positionMap grid =
 foulCheck : List ( Int, Int ) -> Grid Cell -> Maybe Foul
 foulCheck positions grid =
     let
-        ( gridX, gridY ) =
-            Grid.dimensions grid
+        coords =
+            Grid.coordinates grid
 
         outOfBounds ( x, y ) =
-            x < 0 || x >= gridX || y >= gridY
+            not (List.any (\(cx,cy)-> cx==x && cy==y) coords)
     in
-    if List.any (\pos -> Grid.member pos grid) positions then
-        Just CellTaken
+        if List.any (\pos -> Grid.member pos grid) positions then
+            Just CellTaken
 
-    else if List.any outOfBounds positions then
-        Just OutOfBounds
+        else if List.any outOfBounds positions then
+            Just OutOfBounds
 
-    else
-        Nothing
+        else
+            Nothing
 
 
 subscriptions : Model -> Sub Msg
@@ -639,7 +643,7 @@ subscriptions model =
         gameSpeed =
             case model.mode of
                 Normal ->
-                    800 - (model.lines * 4)
+                    1800 - (model.lines * 4)
 
                 Medium ->
                     300 - (model.lines * 2)

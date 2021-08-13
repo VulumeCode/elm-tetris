@@ -36,7 +36,7 @@ empty ( x, y ) =
 
 left : ( Int, Int ) -> ( Int, Int )
 left ( x, y ) =
-    ( x - 1, y )
+    ( x, y + 1 )
 
 
 right : ( Int, Int ) -> ( Int, Int )
@@ -46,12 +46,12 @@ right ( x, y ) =
 
 down : ( Int, Int ) -> ( Int, Int )
 down ( x, y ) =
-    ( x, y + 1 )
+    ( x + 1, y + 1 )
 
 
 up : ( Int, Int ) -> ( Int, Int )
 up ( x, y ) =
-    ( x, y - 1 )
+    ( x - 1, y - 1 )
 
 
 dimensions : Grid a -> ( Int, Int )
@@ -63,6 +63,7 @@ coordinates : Grid a -> List ( Int, Int )
 coordinates (Grid { x, y }) =
     List.range 0 ((x * y) - 1)
         |> List.map (\cellNumber -> ( modBy x cellNumber, cellNumber // x ))
+        |> List.filter (\(x1,y1) -> (abs x1 - y1) < 10 && (abs y1 - x1) < 10)
 
 
 key : ( Int, Int ) -> String
