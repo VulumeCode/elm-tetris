@@ -533,7 +533,7 @@ settle yPos grid =
                 |> List.filterMap
                     (\pos ->
                         if Tuple.second pos < yPos then
-                            Just ( pos, Grid.down pos )
+                            Just ( pos, Grid.right pos )
 
                         else
                             Nothing
@@ -651,20 +651,26 @@ subscriptions model =
                     1800 - (model.lines * 4)
 
                 Medium ->
-                    300 - (model.lines * 2)
+                    600 - (model.lines * 2)
 
                 Hard ->
-                    100 - model.lines
+                    200 - model.lines
     in
     Sub.batch
-        [ Time.every (toFloat gameSpeed) (\_ -> Advance)
+        [ case model.control of
+            Just control ->
+                Sub.none
+            Nothing ->
+                Time.every (toFloat gameSpeed) (\_ -> Advance)
+            
         , case model.control of
             Just control ->
                 Time.every 100 (\_ -> Move control)
-
             Nothing ->
                 Sub.none
+
         , Storage.changes GotStorage
+
         , Browser.Events.onKeyDown
             (Decode.field "key" Decode.string
                 |> Decode.andThen
@@ -672,23 +678,19 @@ subscriptions model =
                         case key of
                             "ArrowLeft" ->
                                 Decode.succeed (SetControl Left)
-
                             "ArrowRight" ->
                                 Decode.succeed (SetControl Right)
-
                             "ArrowUp" ->
                                 Decode.succeed Rotate
-
                             "ArrowDown" ->
                                 Decode.succeed (SetControl Down)
-
                             " " ->
                                 Decode.succeed Place
-
                             _ ->
                                 Decode.fail ""
                     )
             )
+
         , Browser.Events.onKeyUp
             (Decode.field "key" Decode.string
                 |> Decode.andThen
@@ -696,13 +698,10 @@ subscriptions model =
                         case key of
                             "ArrowLeft" ->
                                 Decode.succeed (CancelControl Left)
-
                             "ArrowRight" ->
                                 Decode.succeed (CancelControl Right)
-
                             "ArrowDown" ->
                                 Decode.succeed (CancelControl Down)
-
                             _ ->
                                 Decode.fail ""
                     )
