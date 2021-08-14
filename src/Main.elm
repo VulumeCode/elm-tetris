@@ -326,7 +326,7 @@ type Msg
     | Rotate
     | Advance
     | Place
-    | SettleBoard (List Int)
+    | SettleBoard (Dict.Dict Int (List (Int, Int))) (Dict.Dict Int (List (Int, Int)))
     | Restart
 
 
@@ -371,11 +371,12 @@ update msg model =
         Place ->
             place model
 
-        SettleBoard linesToClear ->
+        SettleBoard rowsToClear colsToClear ->
             ( { model
-                | gridState = List.foldl settle model.gridState linesToClear
+                | gridState = Dict.foldl settleRows model.gridState rowsToClear 
+                                            |> (\grid -> Dict.foldl settleCols grid colsToClear)
                 , state = Playing
-                , lines = model.lines + List.length linesToClear
+                , lines = model.lines + Dict.size rowsToClear + Dict.size colsToClear
               }
             , Random.generate Spawn Tetrimino.random
             )
@@ -395,6 +396,8 @@ update msg model =
                     Cmd.none
                 ]
             )
+
+
 
 
 spawn : Tetrimino -> Model -> Model
@@ -495,33 +498,46 @@ moveHelp control grid =
 clearLines : Model -> ( Model, Cmd Msg )
 clearLines model =
     let
-        (gridX, gridY) =
-            Grid.dimensions model.gridState
-        
+        coords = 
+            Grid.coordinates model.gridState
 
-
-        linesToClear =
+        rows = 
             List.foldl
-                (\( _, y ) -> Dict.update y (\mv -> Just (Maybe.withDefault 0 mv + 1)))
+                (\( x, y ) -> Dict.update y (\mv -> Just (Maybe.withDefault [] mv ++ [( x, y )])))
                 Dict.empty
-                (Grid.positions model.gridState)
-                |> Dict.toList
-                |> List.filter (\( row, count ) -> count >= (gridX // 2) + (19 - row))
-                |> List.map Tuple.first
-                |> List.sort
+                (coords)
+
+        rowsToClear = 
+            Dict.filter 
+                (\_ row -> List.all (\c -> List.member c (Grid.positions model.gridState)) row )
+                rows
+
+        cols = 
+            List.foldl
+                (\( x, y ) -> Dict.update x (\mv -> Just (Maybe.withDefault [] mv ++ [( x, y )])))
+                Dict.empty
+                (coords)
+
+        colsToClear =
+            Dict.filter 
+                (\_ col -> List.all (\c -> List.member c (Grid.positions model.gridState)) col )
+                cols
+
+        coordsToClear = 
+            List.concat <| ((Dict.values rowsToClear) ++ (Dict.values colsToClear))
 
         gridAfterClear =
             List.foldl
-                (\lineNumber -> Grid.filter (\pos _ -> Tuple.second pos /= lineNumber))
+                (\c -> Grid.filter (\pos _ -> pos /= c))
                 model.gridState
-                linesToClear
+                coordsToClear
     in
     ( { model
         | gridState = Grid.map (\_ -> Cell.settle) gridAfterClear
         , state = Settling
       }
     , Process.sleep 200
-        |> Task.perform (\_ -> SettleBoard linesToClear)
+        |> Task.perform (\_ -> SettleBoard rowsToClear colsToClear)
     )
 
 
@@ -533,11 +549,62 @@ settle yPos grid =
                 |> List.filterMap
                     (\pos ->
                         if Tuple.second pos < yPos then
-                            Just ( pos, Grid.right pos )
+                            Just ( pos, Grid.left pos )
 
                         else
                             Nothing
                     )
+    in
+    case groupUpdate aboveClearedPositionMap grid of
+        ( Nothing, newGrid ) ->
+            newGrid
+
+        ( Just foul, _ ) ->
+            grid
+
+
+settleRows : Int -> List (Int, Int) -> Grid Cell -> Grid Cell
+settleRows rnr clearedRow grid =
+    let
+        aboveClearedPositionMap =
+            Grid.positions grid
+                |> List.filterMap
+                    (\pos ->
+                        let
+                            (x,y) = pos
+                        in 
+                            if
+                                List.any (\(cx,cy)->x==cx && y < cy) clearedRow
+                            then
+                                Just ( pos, Grid.left pos )
+                            else
+                                Nothing
+                        )
+    in
+    case groupUpdate aboveClearedPositionMap grid of
+        ( Nothing, newGrid ) ->
+            newGrid
+
+        ( Just foul, _ ) ->
+            grid
+
+settleCols : Int -> List (Int, Int) -> Grid Cell -> Grid Cell
+settleCols rnr clearedCol grid =
+    let
+        aboveClearedPositionMap =
+            Grid.positions grid
+                |> List.filterMap
+                    (\pos ->
+                        let
+                            (x,y) = pos
+                        in 
+                            if
+                                List.any (\(cx,cy)->x < cx && y == cy) clearedCol
+                            then
+                                Just ( pos, Grid.right pos )
+                            else
+                                Nothing
+                        )
     in
     case groupUpdate aboveClearedPositionMap grid of
         ( Nothing, newGrid ) ->
