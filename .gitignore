@@ -1,5 +1,5 @@
 npm-debug.log
 /node_modules
 /elm-stuff
-/dist
+# /dist
 .DS_Store
