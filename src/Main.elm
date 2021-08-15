@@ -17,6 +17,7 @@ import Svg.Attributes
 import Task
 import Tetrimino exposing (Tetrimino)
 import Time
+import Set
 
 
 type alias Model =
@@ -26,6 +27,7 @@ type alias Model =
     , lines : Int
     , mode : Mode
     , control : Maybe Control
+    , clearing : Set.Set (Int,Int)
     }
 
 
@@ -63,6 +65,7 @@ init flags =
       , lines = 0
       , mode = Normal
       , control = Nothing
+      , clearing = Set.empty
       }
     , Random.generate Spawn Tetrimino.random
     )
@@ -102,7 +105,7 @@ viewBoard model =
                 , Svg.Attributes.preserveAspectRatio "xMidYMid meet"
                 , Svg.Attributes.transform "rotate(45)"
                 ]
-                (List.map (viewCell model.gridState) (Grid.coordinates model.gridState))
+                (List.map (viewCell model.gridState model.clearing) (Grid.coordinates model.gridState))
             , overlayControls
             ]
         , viewControls
@@ -110,15 +113,21 @@ viewBoard model =
         ]
 
 
-viewCell : Grid Cell -> ( Int, Int ) -> Svg Msg
-viewCell gridState ( x, y ) =
+viewCell : Grid Cell -> Set.Set (Int, Int) -> ( Int, Int ) -> Svg Msg
+viewCell gridState clearing ( x, y )  =
     Svg.rect
         [ Svg.Attributes.class
             (String.join " "
                 [ "fill-current"
-                , Grid.get ( x, y ) gridState
-                    |> Maybe.map Cell.color
-                    |> Maybe.withDefault "text-gray-700"
+                , 
+                if 
+                    Set.member (x,y) clearing
+                then
+                    "animate-blink text-yellow-500"
+                else
+                    Grid.get ( x, y ) gridState
+                        |> Maybe.map Cell.color
+                        |> Maybe.withDefault "text-gray-700"
                 ]
             )
         , Svg.Attributes.width (String.fromInt Cell.size)
@@ -379,6 +388,7 @@ update msg model =
                                                                     |> (\grid -> Dict.foldl settleCols grid colsToClear)
                                         , state = if newLines == 0 then Playing else Settling
                                         , lines = model.lines + newLines
+                                        , clearing = Set.empty
                                     }
             in
             if newLines == 0
@@ -539,6 +549,7 @@ clearLines model =
     in
     ( { model
         | gridState = Grid.map (\_ -> Cell.settle) gridAfterClear
+        , clearing = Set.fromList <| List.concat <| Dict.values rowsToClear ++ Dict.values colsToClear
         , state = Settling
       }
     , Process.sleep 500
