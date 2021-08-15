@@ -372,14 +372,19 @@ update msg model =
             place model
 
         SettleBoard rowsToClear colsToClear ->
-            ( { model
-                | gridState = Dict.foldl settleRows model.gridState rowsToClear 
-                                            |> (\grid -> Dict.foldl settleCols grid colsToClear)
-                , state = Playing
-                , lines = model.lines + Dict.size rowsToClear + Dict.size colsToClear
-              }
-            , Random.generate Spawn Tetrimino.random
-            )
+            let
+                newLines = Dict.size rowsToClear + Dict.size colsToClear
+                newModel = { model
+                                        | gridState = Dict.foldl settleRows model.gridState rowsToClear 
+                                                                    |> (\grid -> Dict.foldl settleCols grid colsToClear)
+                                        , state = if newLines == 0 then Playing else Settling
+                                        , lines = model.lines + newLines
+                                    }
+            in
+            if newLines == 0
+                then (newModel, Random.generate Spawn Tetrimino.random)
+                else clearLines newModel
+            
 
         Restart ->
             ( { model
@@ -487,12 +492,12 @@ moveHelp control grid =
                                 ( pos, Grid.down pos )
                     )
     in
-    case groupUpdate activePositionMap grid of
-        ( Nothing, newGrid ) ->
-            Ok newGrid
+        case groupUpdate activePositionMap grid of
+            ( Nothing, newGrid ) ->
+                Ok newGrid
 
-        ( Just foul, _ ) ->
-            Err foul
+            ( Just foul, _ ) ->
+                Err foul
 
 
 clearLines : Model -> ( Model, Cmd Msg )
@@ -536,35 +541,12 @@ clearLines model =
         | gridState = Grid.map (\_ -> Cell.settle) gridAfterClear
         , state = Settling
       }
-    , Process.sleep 200
+    , Process.sleep 500
         |> Task.perform (\_ -> SettleBoard rowsToClear colsToClear)
     )
 
-
-settle : Int -> Grid Cell -> Grid Cell
-settle yPos grid =
-    let
-        aboveClearedPositionMap =
-            Grid.positions grid
-                |> List.filterMap
-                    (\pos ->
-                        if Tuple.second pos < yPos then
-                            Just ( pos, Grid.left pos )
-
-                        else
-                            Nothing
-                    )
-    in
-    case groupUpdate aboveClearedPositionMap grid of
-        ( Nothing, newGrid ) ->
-            newGrid
-
-        ( Just foul, _ ) ->
-            grid
-
-
 settleRows : Int -> List (Int, Int) -> Grid Cell -> Grid Cell
-settleRows rnr clearedRow grid =
+settleRows _ clearedRow grid =
     let
         aboveClearedPositionMap =
             Grid.positions grid
@@ -589,7 +571,7 @@ settleRows rnr clearedRow grid =
             grid
 
 settleCols : Int -> List (Int, Int) -> Grid Cell -> Grid Cell
-settleCols rnr clearedCol grid =
+settleCols _ clearedCol grid =
     let
         aboveClearedPositionMap =
             Grid.positions grid
@@ -606,12 +588,12 @@ settleCols rnr clearedCol grid =
                                 Nothing
                         )
     in
-    case groupUpdate aboveClearedPositionMap grid of
-        ( Nothing, newGrid ) ->
-            newGrid
+        case groupUpdate aboveClearedPositionMap grid of
+            ( Nothing, newGrid ) ->
+                newGrid
 
-        ( Just foul, _ ) ->
-            grid
+            ( Just foul, _ ) ->
+                grid
 
 
 rotate : Model -> Model
