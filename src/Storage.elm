@@ -21,7 +21,6 @@ decoder =
 
 port store : Maybe Encode.Value -> Cmd msg
 
-
 storeHighScore : Int -> Cmd msg
 storeHighScore hs =
     let

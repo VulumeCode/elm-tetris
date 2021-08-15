@@ -411,7 +411,7 @@ spawn tetrimino model =
         Ok newGrid ->
             { model | gridState = newGrid }
 
-        Err foul ->
+        Err _ ->
             { model | state = GameOver }
 
 
@@ -441,7 +441,7 @@ move model control =
         Ok newGrid ->
             { model | gridState = newGrid }
 
-        Err foul ->
+        Err _ ->
             model
 
 
@@ -460,7 +460,7 @@ placeHelp grid =
         Ok newGrid ->
             placeHelp newGrid
 
-        Err foul ->
+        Err _ ->
             grid
 
 
@@ -470,7 +470,7 @@ advance model =
         Ok newGrid ->
             ( { model | gridState = newGrid }, Cmd.none )
 
-        Err foul ->
+        Err _ ->
             clearLines model
 
 
@@ -567,7 +567,7 @@ settleRows _ clearedRow grid =
         ( Nothing, newGrid ) ->
             newGrid
 
-        ( Just foul, _ ) ->
+        ( Just _, _ ) ->
             grid
 
 settleCols : Int -> List (Int, Int) -> Grid Cell -> Grid Cell
@@ -592,7 +592,7 @@ settleCols _ clearedCol grid =
             ( Nothing, newGrid ) ->
                 newGrid
 
-            ( Just foul, _ ) ->
+            ( Just _, _ ) ->
                 grid
 
 
@@ -707,7 +707,7 @@ subscriptions model =
     in
     Sub.batch
         [ case model.control of
-            Just control ->
+            Just _ ->
                 Sub.none
             Nothing ->
                 Time.every (toFloat gameSpeed) (\_ -> Advance)
